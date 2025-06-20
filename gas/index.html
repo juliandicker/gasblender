@@ -1,0 +1,85 @@
+<html>
+
+<head>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.6.0.js"></script>
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col">&nbsp;</div>
+            <div class="col">Start:</div>
+            <div class="col">Finish:</div>
+            <div class="col">Helium Bank:</div>
+        </div>
+        <div class="row">
+            <div class="col">Bar:</div>
+            <div class="col"><input type="number" min="1" max="300" name="start_bar" id="start_bar" value="120"></div>
+            <div class="col"><input type="number" min="1" max="300" name="finish_bar" id="finish_bar" value="250"></div>
+            <div class="col"><input type="number" min="1" max="300" name="helium_bar" id="helium_bar" value="250"></div>
+        </div>
+        <div class="row">
+            <div class="col">O2:</div>
+            <div class="col"><input type="number" min="0" max="100" name="start_o2" id="start_o2" value="22"></div>
+            <div class="col"><input type="number" min="0" max="100" name="finish_o2" id="finish_o2" value="18"></div>
+            <div class="col"><input type="number" min="0" max="100" name="helium_o2" id="helium_o2" value="11"></div>
+        </div>
+        <div class="row">
+            <div class="col">He:</div>
+            <div class="col"><input type="number" min="0" max="100" name="start_he" id="start_he" value="50"></div>
+            <div class="col"><input type="number" min="0" max="100" name="finish_he" id="finish_he" value="40"></div>
+            <div class="col"><input type="number" min="0" max="100" name="helium_he" id="helium_he" value="90"></div>
+        </div>
+        <div>
+            <button id="btnName">Submit</button>
+        </div>
+    </form>
+
+    <div id="result"></div>  
+    <label id="error" style="color:red"></label> 
+
+</body>
+<script>
+    $(document).ready(function () {
+        $("#btnName").on("click", function () {
+
+            datapacket = JSON.stringify({
+                "start_bar": parseInt($("#start_bar").val()),
+                "start_o2": parseInt($("#start_o2").val()),
+                "start_he": parseInt($("#start_he").val()),
+                "finish_bar": parseInt($("#finish_bar").val()),
+                "finish_o2": parseInt($("#finish_o2").val()),
+                "finish_he": parseInt($("#finish_he").val()),
+                "helium_bar": parseInt($("#helium_bar").val()),
+                "helium_o2": parseInt($("#helium_o2").val()),
+                "helium_he": parseInt($("#helium_he").val())
+            })
+
+            $.ajax({
+                type: "POST",
+                url: "https://gasblender.azurewebsites.net/api/TrimixBlend",
+                data: datapacket,
+                success: function (response) {
+                    json = JSON.parse(response)
+
+                    html = '<div class="container">'
+                    html += '<div class="row"><div class="col">&nbsp;</div><div class="col">Start</div><div class="col">Finish</div><div class="col">Test</div></div>'
+                    $.each(json.steps, function(i, step) {
+                        diff = Math.round((step.result_gas.bar - step.start_gas.bar) * 100) / 100  
+                        html += '<div class="row"><div class="col">' + step.name + '</div><div class="col">' + step.start_gas.bar + '</div><div class="col">' + step.result_gas.bar + ' ('+ diff +')</div><div class="col">' + step.result_gas.o2 + '/' + step.result_gas.he + '</div></div>'
+                    });
+                    html += '</div>'
+
+                    $("#result").html(html);
+                },
+                error: function(xhr, status, error) {
+                    $("#error").text(error);
+                }
+            })
+        });
+    })
+</script>
+
+</html>
